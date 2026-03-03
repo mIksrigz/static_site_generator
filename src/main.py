@@ -1,9 +1,9 @@
-from textnode import TextNode
+from textnode import TextNode, TextType
 
 
 def main():
-    textnode = TextNode("some test vtext", "test_link", "https://www.boot.dev")
-    print(textnode)
+    node = TextNode("some test text", TextType.LINK, "https://www.boot.dev")
+    print(node)
 
 
 if __name__ == "__main__":

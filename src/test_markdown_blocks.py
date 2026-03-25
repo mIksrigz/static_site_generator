@@ -1,0 +1,134 @@
+import unittest
+
+from markdown_blocks import markdown_to_blocks
+
+class Test_Markdown_To_Blocks(unittest.TestCase):
+    def test_markdown_to_blocks(self):
+        md = """
+This is **bolded** paragraph
+
+This is another paragraph with _italic_ text and `code` here
+This is the same paragraph on a new line
+
+- This is a list
+- with items
+"""
+        blocks = markdown_to_blocks(md)
+        self.assertEqual(
+            blocks,
+            [
+                "This is **bolded** paragraph",
+                "This is another paragraph with _italic_ text and `code` here\nThis is the same paragraph on a new line",
+                "- This is a list\n- with items",
+            ],
+        )
+
+    def test_single_block(self):
+        md = """
+Just one paragraph here
+"""
+        blocks = markdown_to_blocks(md)
+        self.assertEqual(blocks, ["Just one paragraph here"])
+
+    def test_extra_blank_lines_between_blocks(self):
+        md = """
+First block
+
+
+Second block
+
+
+
+Third block
+"""
+        blocks = markdown_to_blocks(md)
+        self.assertEqual(blocks, ["First block", "Second block", "Third block"])
+
+    def test_heading_and_paragraph(self):
+        md = """
+# Heading one
+
+Some paragraph text beneath it
+"""
+        blocks = markdown_to_blocks(md)
+        self.assertEqual(blocks, ["# Heading one", "Some paragraph text beneath it"])
+
+    def test_multiple_headings(self):
+        md = """
+# Title
+
+## Subtitle
+
+### Section
+"""
+        blocks = markdown_to_blocks(md)
+        self.assertEqual(blocks, ["# Title", "## Subtitle", "### Section"])
+
+    def test_ordered_list_block(self):
+        md = """
+Some intro text
+
+1. First item
+2. Second item
+3. Third item
+"""
+        blocks = markdown_to_blocks(md)
+        self.assertEqual(
+            blocks,
+            [
+                "Some intro text",
+                "1. First item\n2. Second item\n3. Third item",
+            ],
+        )
+
+    
+    def test_blockquote_and_paragraph(self):
+        md = """
+> This is a blockquote
+> spanning two lines
+
+And a follow-up paragraph
+"""
+        blocks = markdown_to_blocks(md)
+        self.assertEqual(
+            blocks,
+            [
+                "> This is a blockquote\n> spanning two lines",
+                "And a follow-up paragraph",
+            ],
+        )
+
+    def test_heading_list_and_paragraph(self):
+        md = """
+## Shopping List
+
+- Apples
+- Bananas
+- Cherries
+
+Don't forget the milk!
+"""
+        blocks = markdown_to_blocks(md)
+        self.assertEqual(
+            blocks,
+            [
+                "## Shopping List",
+                "- Apples\n- Bananas\n- Cherries",
+                "Don't forget the milk!",
+            ],
+        )
+
+    def test_whitespace_only_lines_ignored(self):
+        md = "First block\n   \n\nSecond block"
+        blocks = markdown_to_blocks(md)
+        self.assertEqual(blocks, ["First block", "Second block"])
+
+    def test_empty_string(self):
+        md = ""
+        blocks = markdown_to_blocks(md)
+        self.assertEqual(blocks, [])
+
+
+
+if __name__ == "__main__":
+    unittest.main()

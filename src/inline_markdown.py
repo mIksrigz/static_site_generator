@@ -15,6 +15,17 @@ def extract_markdown_images(text):
     return matches
 
 
+def text_to_textnodes(text):
+
+    starting_text_node = TextNode(text, TextType.TEXT)
+    after_bold = split_nodes_delimiter([starting_text_node], "**", TextType.BOLD)
+    after_italic = split_nodes_delimiter(after_bold, "_", TextType.ITALIC)
+    after_code = split_nodes_delimiter(after_italic, "`", TextType.CODE)
+    after_image = split_nodes_image(after_code)
+    after_link = split_nodes_link(after_image)
+    
+    return after_link
+
 def split_nodes_delimiter(old_nodes, delimiter, text_type):
     result = []
     for old_node in old_nodes:

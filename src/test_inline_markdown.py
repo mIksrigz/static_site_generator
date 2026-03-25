@@ -1,6 +1,13 @@
 import unittest
 
-from inline_markdown import split_nodes_delimiter, split_nodes_link, split_nodes_image, extract_markdown_images, extract_markdown_links
+from inline_markdown import (
+    split_nodes_delimiter, 
+    split_nodes_link, 
+    split_nodes_image, 
+    extract_markdown_images, 
+    extract_markdown_links, 
+    text_to_textnodes
+)
 from textnode import TextNode, TextType
 
 
@@ -104,7 +111,7 @@ class Test_Extract_Markdown_Images(unittest.TestCase):
             [("test text", "/home/user/Pictures/img1.png")],
             matches
         )
-    
+
     def test_two_image_markdown(self):
         text = "This is text with a ![rick roll](https://i.imgur.com/aKaOqIh.gif) and ![obi wan](https://i.imgur.com/fJRm4Vk.jpeg)"
         matches = extract_markdown_images(text)
@@ -215,7 +222,7 @@ class Test_Split_Nodes_Image(unittest.TestCase):
             new_nodes,
         )
 
-        
+
     def test_split_image(self):
         node = TextNode(
             "This is text with an ![image](https://i.imgur.com/zjjcJKZ.png)",
@@ -261,6 +268,156 @@ class Test_Split_Nodes_Image(unittest.TestCase):
             new_nodes,
         )
 
+class Test_Text_To_Textnodes(unittest.TestCase):
+    def test_text_to_textnodes(self):
+        text = "This is **text** with an _italic_ word and a `code block` and an ![obi wan image](https://i.imgur.com/fJRm4Vk.jpeg) and a [link](https://boot.dev)"
+        result = text_to_textnodes(text)
+        self.assertListEqual(
+            [
+                TextNode("This is ", TextType.TEXT),
+                TextNode("text", TextType.BOLD),
+                TextNode(" with an ", TextType.TEXT),
+                TextNode("italic", TextType.ITALIC),
+                TextNode(" word and a ", TextType.TEXT),
+                TextNode("code block", TextType.CODE),
+                TextNode(" and an ", TextType.TEXT),
+                TextNode("obi wan image", TextType.IMAGE, "https://i.imgur.com/fJRm4Vk.jpeg"),
+                TextNode(" and a ", TextType.TEXT),
+                TextNode("link", TextType.LINK, "https://boot.dev"),
+            ],
+            result
+        )
+
+    def test_image_and_link(self):
+        text = "![logo](https://example.com/logo.png) see [docs](https://docs.example.com)"
+        result = text_to_textnodes(text)
+        self.assertListEqual(
+            [
+                TextNode("logo", TextType.IMAGE, "https://example.com/logo.png"),
+                TextNode(" see ", TextType.TEXT),
+                TextNode("docs", TextType.LINK, "https://docs.example.com"),
+            ],
+            result
+        )
+
+    def test_code_between_text(self):
+        text = "Run `npm install` to get started"
+        result = text_to_textnodes(text)
+        self.assertListEqual(
+            [
+                TextNode("Run ", TextType.TEXT),
+                TextNode("npm install", TextType.CODE),
+                TextNode(" to get started", TextType.TEXT),
+            ],
+            result
+        )
+
+    def test_empty_string(self):
+        text = ""
+        result = text_to_textnodes(text)
+        self.assertListEqual([], result)
+
+    def test_bold_italic_code(self):
+        text = "**bold** then _italic_ then `code`"
+        result = text_to_textnodes(text)
+        self.assertListEqual(
+            [
+                TextNode("bold", TextType.BOLD),
+                TextNode(" then ", TextType.TEXT),
+                TextNode("italic", TextType.ITALIC),
+                TextNode(" then ", TextType.TEXT),
+                TextNode("code", TextType.CODE),
+            ],
+            result
+        )
+
+    def test_bold_wrapping_link(self):
+        text = "Check **this** and [a link](https://example.com) together"
+        result = text_to_textnodes(text)
+        self.assertListEqual(
+            [
+                TextNode("Check ", TextType.TEXT),
+                TextNode("this", TextType.BOLD),
+                TextNode(" and ", TextType.TEXT),
+                TextNode("a link", TextType.LINK, "https://example.com"),
+                TextNode(" together", TextType.TEXT),
+            ],
+            result
+        )
+
+    def test_code_and_image_and_link(self):
+        text = "Run `git clone` then see ![diagram](https://example.com/d.png) and [docs](https://docs.example.com)"
+        result = text_to_textnodes(text)
+        self.assertListEqual(
+            [
+                TextNode("Run ", TextType.TEXT),
+                TextNode("git clone", TextType.CODE),
+                TextNode(" then see ", TextType.TEXT),
+                TextNode("diagram", TextType.IMAGE, "https://example.com/d.png"),
+                TextNode(" and ", TextType.TEXT),
+                TextNode("docs", TextType.LINK, "https://docs.example.com"),
+            ],
+            result
+        )
+
+    def test_italic_code_link(self):
+        text = "_Note:_ use `pip install` and see [PyPI](https://pypi.org)"
+        result = text_to_textnodes(text)
+        self.assertListEqual(
+            [
+                TextNode("Note:", TextType.ITALIC),
+                TextNode(" use ", TextType.TEXT),
+                TextNode("pip install", TextType.CODE),
+                TextNode(" and see ", TextType.TEXT),
+                TextNode("PyPI", TextType.LINK, "https://pypi.org"),
+            ],
+            result
+        )
+
+    def test_image_between_bold_and_italic(self):
+        text = "**Start** ![pic](https://example.com/pic.jpg) _end_"
+        result = text_to_textnodes(text)
+        self.assertListEqual(
+            [
+                TextNode("Start", TextType.BOLD),
+                TextNode(" ", TextType.TEXT),
+                TextNode("pic", TextType.IMAGE, "https://example.com/pic.jpg"),
+                TextNode(" ", TextType.TEXT),
+                TextNode("end", TextType.ITALIC),
+            ],
+            result
+        )
+
+    def test_two_codes_and_two_links(self):
+        text = "Use `cd` or `ls` to navigate, see [man](https://man7.org) or [tldr](https://tldr.sh)"
+        result = text_to_textnodes(text)
+        self.assertListEqual(
+            [
+                TextNode("Use ", TextType.TEXT),
+                TextNode("cd", TextType.CODE),
+                TextNode(" or ", TextType.TEXT),
+                TextNode("ls", TextType.CODE),
+                TextNode(" to navigate, see ", TextType.TEXT),
+                TextNode("man", TextType.LINK, "https://man7.org"),
+                TextNode(" or ", TextType.TEXT),
+                TextNode("tldr", TextType.LINK, "https://tldr.sh"),
+            ],
+            result
+        )
+
+    def test_all_types_no_plain_text_between(self):
+        text = "**bold**_italic_`code`[link](https://example.com)![img](https://example.com/img.png)"
+        result = text_to_textnodes(text)
+        self.assertListEqual(
+            [
+                TextNode("bold", TextType.BOLD),
+                TextNode("italic", TextType.ITALIC),
+                TextNode("code", TextType.CODE),
+                TextNode("link", TextType.LINK, "https://example.com"),
+                TextNode("img", TextType.IMAGE, "https://example.com/img.png"),
+            ],
+            result
+        )
 
 
 if __name__ == "__main__":
